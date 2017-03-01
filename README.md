@@ -1,3 +1,3 @@
 # algorithm-problems
 
-Python - Algorithm problems I'm solving/currently solving
+Python - Algorithm problems i've solved/currently solving. Mostly from www.leetcode.com. Username is benderx.
