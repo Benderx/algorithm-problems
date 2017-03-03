@@ -42,8 +42,8 @@ class Solution(object):
 
         if neg_flag == 0:
             return int(total)
-        else:
-            return -int(total)
+        else
+:            return -int(total)
 
 
 
