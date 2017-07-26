@@ -74,19 +74,25 @@ class Solution(object):
 
 
 
-    def word_dist_dict(self, word_dicts):
+    def word_dist_dict(self, word1, word2):
         dist = 0
-        if num == 0:
-            for char1, char2 in zip(word1, word2):
-                if char1 != char2:
+        for val in reversed(self.chars):
+            if val[1] == -1:
+                break
+            a = chr(val[0] + 97)
+
+            b = a in self.word_dicts[word1]
+            c = a in self.word_dicts[word2]
+            if b:
+                if not c:
                     if dist == 1:
-                        return 2
+                        return False
                     dist += 1
-        else:
-            for char1, char2 in zip(word1, word2):
-                if char1 != char2:
-                    dist += 1
-        return dist
+            elif c:
+                if dist == 1:
+                    return False
+                dist += 1
+        return True
 
 
     def form_graph(self, beginWord, node_dict, wordList):
@@ -94,27 +100,29 @@ class Solution(object):
         curr = None
         total_time = 0
         count_time = 0
-        n = 0
-        j = 0
         start_index = 0
         self.wordy_assign(wordList)
 
         while start_index < len(wordList) - 1:
             curr = node_dict[wordList[start_index]]
-            
+            time1 = time.perf_counter()
             for word in range(start_index, len(wordList)):
-                n += 1
-                time1 = time.perf_counter()
+                
+                pos = self.word_dist_dict(wordList[word], curr.val)
+                if not pos:
+                    continue
                 dist = self.word_dist_search(wordList[word], curr.val, 0)
-                total_time += time.perf_counter() - time1
-                count_time += 1
+                
                 if dist == 1:
-                    j += 1
                     curr.connected.append(node_dict[wordList[word]])
                     node_dict[wordList[word]].connected.append(curr)
-            
+            total_time += time.perf_counter() - time1
+            count_time += 1
             start_index += 1
-        print(n, j, total_time/count_time, total_time)
+        if count_time == 0:
+            print("count_time is 0")
+            exit()
+        print(total_time/count_time, total_time)
         # root = node_dict[beginWord]
         # curr = None
         # queue = [root]
