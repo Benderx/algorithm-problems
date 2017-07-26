@@ -4,22 +4,6 @@ class Solution(object):
         def __init__(self, v):
             self.val = v
             self.connected = []
-            self.parents = []
-
-
-    def word_dist(self, word1, word2, num):
-        dist = 0
-        if num == 0:
-            for char1, char2 in zip(word1, word2):
-                if char1 != char2:
-                    dist += 1
-                    if dist == 2:
-                        break
-        else:
-            for char1, char2 in zip(word1, word2):
-                if char1 != char2:
-                    dist += 1
-        return dist
 
 
     def get_all_word_dists(self, wordList, word):
@@ -37,25 +21,127 @@ class Solution(object):
             a[i] = self.node(i)
         return a
 
+    # per whileloop: 0.0018158132344709473
+    # per word_dist: 6.694231968871189e-07
+    # per for loop: 7.542643343710887e-07
+
+    # new
+    # appenders: 1.5385875662364216e-07
+    # dister: 8.452830712024485e-07
+    # for: 0.0013108194752061337
+    # total n: 4079795
+    # total j: 13260
+
+
+    def word_dist_search(self, word1, word2, num):
+        dist = 0
+        if num == 0:
+            for char1, char2 in zip(word1, word2):
+                if char1 != char2:
+                    if dist == 1:
+                        return 2
+                    dist += 1
+        else:
+            for char1, char2 in zip(word1, word2):
+                if char1 != char2:
+                    dist += 1
+        return dist
+
+
+    def wordy_assign(self, wordList):
+        self.word_dicts = {}
+        self.freq = {}
+        self.chars = []
+        for i in range(26):
+            self.chars.append([i, -1])
+
+        for i in wordList:
+            new = {}
+            for j in i:
+                if j not in new:
+                    new[j] = 1
+                else:
+                    new[j] += 1
+                if j not in self.freq:
+                    self.freq[j] = 1
+                else:
+                    self.freq[j] += 1
+            self.word_dicts[i] = new
+        for i in self.freq:
+            self.chars[ord(i) - 97][1] = self.freq[i]
+        self.chars.sort(key=lambda x: x[1])
+
+
+
+
+    def word_dist_dict(self, word_dicts):
+        dist = 0
+        if num == 0:
+            for char1, char2 in zip(word1, word2):
+                if char1 != char2:
+                    if dist == 1:
+                        return 2
+                    dist += 1
+        else:
+            for char1, char2 in zip(word1, word2):
+                if char1 != char2:
+                    dist += 1
+        return dist
+
 
     def form_graph(self, beginWord, node_dict, wordList):
         root = node_dict[beginWord]
         curr = None
-        queue = [root]
-        visited = {beginWord: True}
-        while len(queue) != 0:
-            curr = queue.pop(0)
-            for word in wordList:
-                if word == curr.val:
-                    continue
-                dist = self.word_dist(word, curr.val, 0)
+        total_time = 0
+        count_time = 0
+        n = 0
+        j = 0
+        start_index = 0
+        self.wordy_assign(wordList)
+
+        while start_index < len(wordList) - 1:
+            curr = node_dict[wordList[start_index]]
+            
+            for word in range(start_index, len(wordList)):
+                n += 1
+                time1 = time.perf_counter()
+                dist = self.word_dist_search(wordList[word], curr.val, 0)
+                total_time += time.perf_counter() - time1
+                count_time += 1
                 if dist == 1:
-                    if word not in visited:
-                        queue.append(node_dict[word])
-                        visited[word] = True
-                    curr.connected.append(node_dict[word])
-                    node_dict[word].parents.append(curr)
-        print(n)
+                    j += 1
+                    curr.connected.append(node_dict[wordList[word]])
+                    node_dict[wordList[word]].connected.append(curr)
+            
+            start_index += 1
+        print(n, j, total_time/count_time, total_time)
+        # root = node_dict[beginWord]
+        # curr = None
+        # queue = [root]
+        # visited = {beginWord: True}
+        # total_time = 0
+        # count_time = 0
+        # n = 0
+        # j = 0
+        # while len(queue) != 0:
+        #     curr = queue.pop(0)
+        #     for word in wordList:
+        #         # time1 = time.perf_counter()
+        #         n += 1
+        #         if word == curr.val:
+        #             continue
+
+        #         dist = self.word_dist(word, curr.val, 0)
+        #         time1 = time.perf_counter()
+        #         if dist == 1:
+        #             j += 1
+        #             if word not in visited:
+        #                 queue.append(node_dict[word])
+        #                 visited[word] = True
+        #             curr.connected.append(node_dict[word])
+        #         total_time += time.perf_counter() - time1
+        #         count_time += 1
+        # print(n, j, total_time/count_time, total_time)
         return root
 
 
@@ -90,14 +176,6 @@ class Solution(object):
         return info
 
 
-    def get_shortest(self, info, end_node):
-        paths = [[end_node.val]]
-        self.dfs_shortest(info, end_node, paths[0], paths, 1)
-        for i in paths:
-            i.reverse()
-        return paths
-
-
     def dc(self, arr, depth):
         new = []
         for i in range(depth):
@@ -105,22 +183,30 @@ class Solution(object):
         return new
 
 
-    def dfs_shortest(self, info, node, curr, paths, depth):
+    def dfs_shortest(self, info, node, curr, paths, depth, totes):
         flag = False
-        for i in node.parents:
+        for i in node.connected:
+            # if depth == 3:
+            #     print(i.val, depth)
             if info[i.val][0] == info[node.val][0] - 1:
-                if flag:
-                    paths.append(self.dc(curr, depth))
+                if flag and depth != 1:
+                    paths.append(self.dc(curr, totes-depth))
                     curr = paths[-1]
                 curr.append(i.val)
-                self.dfs_shortest(info, i, curr, paths, depth+1)
+                self.dfs_shortest(info, i, curr, paths, depth-1, totes)
                 flag = True
-                # if len(a) > 0:
-                #     return a
+
+
+    def get_shortest(self, info, end_node):
+        paths = [[end_node.val]] 
+        self.dfs_shortest(info, end_node, paths[0], paths, info[end_node.val][0], info[end_node.val][0]+1)
+        # for i in paths:
+        #     i.reverse()
+        return paths
 
 
     def findLadders(self, beginWord, endWord, wordList):
-        wordList.append(beginWord)
+        wordList.insert(0, beginWord)
         dists = self.get_all_word_dists(wordList, endWord)
         node_dict = self.make_nodes(wordList, dists)
         print("fin make")
@@ -146,7 +232,6 @@ print("mine")
 for i in [["hit","hot","dot","dog","cog"],
     ["hit","hot","lot","log","cog"]]:
     print(i)
-
 
 
 
